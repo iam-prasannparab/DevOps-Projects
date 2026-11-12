@@ -22,7 +22,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/SaiDevOpsFaculty/myirctc.git'
+                url: 'https://github.com/iam-prasannparab/myirctc.git'
             }
         }
 
@@ -46,15 +46,15 @@ pipeline {
         }
 
         // Jenkins server: static code analysis sent to SonarQube
-        // 'saidemy-sonarqube-server' is the SonarQube server name in Manage Jenkins > System
+        // 'irctc-sonarqube-server' is the SonarQube server name in Manage Jenkins > System
         stage('QA') {
             steps {
-                withSonarQubeEnv('saidemy-sonarqube-server') {
+                withSonarQubeEnv('irctc-sonarqube-server') {
                     sh '''
                     mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                      -Dsonar.organization=saidemydevopskey \
-                      -Dsonar.projectKey=saidemydevopskey_saidemyproject \
-                      -Dsonar.projectName=saidemyproject
+                      -Dsonar.organization=irctcdevopskey \
+                      -Dsonar.projectKey=irctcdevopskey_irctcproject \
+                      -Dsonar.projectName=irctcproject
                     '''
                 }
             }

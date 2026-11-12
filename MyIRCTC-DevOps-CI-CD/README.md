@@ -209,4 +209,4 @@ See [`docs/security.md`](docs/security.md). Credentials stay in Jenkins Credenti
 ## Author
 
 **Prasann Parab**, DevOps Engineer
-[LinkedIn](www.linkedin.com/in/prasannparab) · [Portfolio](https://prasannparab-portfolio.netlify.app/)
+[LinkedIn](https://www.linkedin.com/in/prasannparab/) · [Portfolio](https://prasannparab-portfolio.netlify.app/)

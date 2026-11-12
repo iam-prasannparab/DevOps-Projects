@@ -1,0 +1,22 @@
+   - name: Deploy Tomcat container
+     hosts: docker
+     become: true
+     tasks:
+       - name: Pull latest image
+         community.docker.docker_image:
+           name: <dockerhub-user>/tomcat-hello
+           tag: latest
+           source: pull
+
+       - name: Stop and remove old container
+         community.docker.docker_container:
+           name: tomcat-app
+           state: absent
+
+       - name: Run new container
+         community.docker.docker_container:
+           name: tomcat-app
+           image: <dockerhub-user>/tomcat-hello:latest
+           state: started
+           published_ports:
+             - "8080:8080"

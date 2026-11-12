@@ -1,0 +1,5 @@
+# TEMPLATE: namespace for the MyIRCTC application
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myirctc

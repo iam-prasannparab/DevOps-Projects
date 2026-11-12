@@ -1,0 +1,24 @@
+# Maven build output
+target/
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Local secrets and inventories with real values
+*.pem
+*.key
+.env
+ansible/hosts
+hosts
+
+# Terraform state and variables
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+
+# OS files
+.DS_Store
+Thumbs.db

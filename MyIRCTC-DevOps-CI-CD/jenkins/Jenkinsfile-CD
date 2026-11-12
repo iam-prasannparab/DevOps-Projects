@@ -1,0 +1,38 @@
+// =============================================================================
+// Jenkinsfile-CD : Continuous Deployment pipeline for MyIRCTC
+// Runs on: Jenkins server (deployment is executed on the Ansible server over SSH)
+// Triggered by: successful completion of the CI pipeline (Jenkinsfile-CI)
+// Job name used by CI: Pipeline_RegApp_CD_Job
+// =============================================================================
+
+pipeline {
+    agent any
+
+    stages {
+
+        // Jenkins asks the Ansible server (over SSH) to run the Kubernetes deployment playbook.
+        // Ansible then applies the Kubernetes manifests to the cluster.
+        stage('Deployment') {
+            steps {
+                sshPublisher(
+                    publishers: [
+                        sshPublisherDesc(
+                            configName: 'ansible-server',
+                            transfers: [
+                                sshTransfer(
+                                    sourceFiles: '',
+                                    removePrefix: '',
+                                    remoteDirectory: '',
+                                    execCommand: '''
+                                    ansible-playbook -i /opt/docker/hosts /opt/docker/kube_deploy.yml
+                                    '''
+                                )
+                            ],
+                            verbose: true
+                        )
+                    ]
+                )
+            }
+        }
+    }
+}

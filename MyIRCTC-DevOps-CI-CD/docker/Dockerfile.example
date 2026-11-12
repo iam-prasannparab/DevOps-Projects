@@ -1,0 +1,15 @@
+# EXAMPLE Dockerfile. Not the supplied project file; verify it against your own setup before use.
+# Packages the WAR produced by Maven into a Tomcat image.
+
+FROM tomcat:10.1-jdk21
+
+# Remove the default apps so the image only serves the application
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+# Copy the WAR built by Jenkins (target/*.war, transferred to /opt/docker by the SSH Publisher).
+# Renaming to ROOT.war makes the app available at the root path "/".
+COPY myirctc.war /usr/local/tomcat/webapps/ROOT.war
+
+EXPOSE 8080
+
+CMD ["catalina.sh", "run"]

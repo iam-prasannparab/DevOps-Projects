@@ -1,0 +1,13 @@
+# TEMPLATE ONLY. Copy to /opt/docker/hosts on the Ansible server and replace the placeholders.
+# Do not commit real IP addresses or usernames.
+
+[ansible_server]
+localhost ansible_connection=local
+
+[k8s_nodes]
+# <worker-node-private-ip-1>
+# <worker-node-private-ip-2>
+
+[k8s_nodes:vars]
+ansible_user=<ssh-user>
+# Use SSH keys, not passwords. Keep the private key outside this repository.

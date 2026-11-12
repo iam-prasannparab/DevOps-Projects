@@ -1,0 +1,31 @@
+# =============================================================================
+# TEMPLATE: create_image_regapp.yml
+# Called by: Jenkinsfile-CI, stage "Docker Image with Artifact"
+#   ansible-playbook -i /opt/docker/hosts /opt/docker/create_image_regapp.yml
+# Runs on: Ansible server (localhost)
+# Input:  /opt/docker/Dockerfile and /opt/docker/myirctc.war (copied by Jenkins)
+# Output: image pushed to Docker Hub
+# Verify this against your own playbook before use.
+# =============================================================================
+- name: Build and push the MyIRCTC Tomcat image
+  hosts: ansible_server
+  gather_facts: false
+  vars:
+    dockerhub_user: "<dockerhub-username>"          # replace
+    image_name: "{{ dockerhub_user }}/myirctc"
+    image_tag: "latest"                             # see note in README: use a build-specific tag
+    build_dir: /opt/docker
+
+  tasks:
+    # Build the image from the Dockerfile and the WAR in /opt/docker
+    - name: Build Docker image
+      community.docker.docker_image_build:
+        name: "{{ image_name }}"
+        tag: "{{ image_tag }}"
+        path: "{{ build_dir }}"
+
+    # Push to Docker Hub. The Ansible server must already be logged in (docker login).
+    - name: Push image to Docker Hub
+      community.docker.docker_image_push:
+        name: "{{ image_name }}"
+        tag: "{{ image_tag }}"

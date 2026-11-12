@@ -1,0 +1,30 @@
+# =============================================================================
+# TEMPLATE: kube_deploy.yml
+# Called by: Jenkinsfile-CD, stage "Deployment"
+#   ansible-playbook -i /opt/docker/hosts /opt/docker/kube_deploy.yml
+# Runs on: Ansible server (localhost), which has kubectl access to the EKS cluster
+# Input:  /opt/docker/kubernetes/*.yaml (manifests copied from this repo)
+# Output: namespace, Deployment, and Service applied to the cluster
+# Verify this against your own playbook before use.
+# =============================================================================
+- name: Deploy MyIRCTC to Kubernetes
+  hosts: ansible_server
+  gather_facts: false
+  vars:
+    manifest_dir: /opt/docker/kubernetes
+
+  tasks:
+    # Create the namespace first, so the other manifests can be applied into it
+    - name: Apply namespace
+      ansible.builtin.command: kubectl apply -f {{ manifest_dir }}/namespace.yaml
+      changed_when: true
+
+    # Apply the Deployment (pulls the image from Docker Hub) and the Service (creates the Load Balancer)
+    - name: Apply Deployment and Service
+      ansible.builtin.command: kubectl apply -f {{ manifest_dir }}/deployment.yaml -f {{ manifest_dir }}/service.yaml
+      changed_when: true
+
+    # Wait until the rollout finishes, so the Jenkins job fails if pods do not start
+    - name: Wait for rollout
+      ansible.builtin.command: kubectl rollout status deployment/myirctc -n myirctc --timeout=180s
+      changed_when: false

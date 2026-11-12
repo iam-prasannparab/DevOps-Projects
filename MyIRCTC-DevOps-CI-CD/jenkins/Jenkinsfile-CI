@@ -1,0 +1,126 @@
+// =============================================================================
+// Jenkinsfile-CI : Continuous Integration pipeline for MyIRCTC
+// Runs on: Jenkins server
+// Triggers:  GitHub push/webhook (or manual build)
+// On success: triggers Pipeline_RegApp_CD_Job (the CD pipeline)
+// =============================================================================
+
+// JFrog Artifactory base URL (not a secret; the credential is referenced by ID below)
+def registry = 'https://trialinfo3y.jfrog.io'
+
+pipeline {
+    agent any
+
+    tools {
+        // Maven installation configured in Manage Jenkins > Tools
+        maven 'M2_HOME'
+    }
+
+    stages {
+
+        // Jenkins server: clone the application source from GitHub
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/SaiDevOpsFaculty/myirctc.git'
+            }
+        }
+
+        // Jenkins server: compile and package the Java web app into target/*.war
+        // -DskipTests skips tests here; tests run in the Test stage below.
+        stage('Build') {
+            steps {
+                echo '----------- build started ----------'
+                sh 'mvn clean package -DskipTests'
+                echo '----------- build completed ----------'
+            }
+        }
+
+        // Jenkins server: run unit tests with Maven
+        stage('Test') {
+            steps {
+                echo '----------- unit test started ----------'
+                sh 'mvn test'
+                echo '----------- unit test completed ----------'
+            }
+        }
+
+        // Jenkins server: static code analysis sent to SonarQube
+        // 'saidemy-sonarqube-server' is the SonarQube server name in Manage Jenkins > System
+        stage('QA') {
+            steps {
+                withSonarQubeEnv('saidemy-sonarqube-server') {
+                    sh '''
+                    mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                      -Dsonar.organization=saidemydevopskey \
+                      -Dsonar.projectKey=saidemydevopskey_saidemyproject \
+                      -Dsonar.projectName=saidemyproject
+                    '''
+                }
+            }
+        }
+
+        // Jenkins server: upload target/*.war to JFrog Artifactory with build info
+        // 'artifact-cred' is a Jenkins credential ID (username/token stored in Jenkins)
+        stage('Artifact Publish') {
+            steps {
+                script {
+                    def server = Artifactory.newServer(
+                        url: "${registry}/artifactory",
+                        credentialsId: "artifact-cred"
+                    )
+
+                    def properties = "buildid=${env.BUILD_ID};commitid=${env.GIT_COMMIT}"
+
+                    def uploadSpec = """{
+                        "files": [
+                            {
+                                "pattern": "target/*.war",
+                                "target": "sai-libs-release-local/",
+                                "props": "${properties}"
+                            }
+                        ]
+                    }"""
+
+                    def buildInfo = server.upload(uploadSpec)
+                    server.publishBuildInfo(buildInfo)
+                }
+            }
+        }
+
+        // Jenkins -> Ansible server (SSH Publisher): copy the WAR to /opt/docker,
+        // then run the Docker image creation playbook on the Ansible server.
+        // 'ansible-server' is an SSH server configured in Manage Jenkins > System.
+        stage('Docker Image with Artifact') {
+            steps {
+                sshPublisher(
+                    publishers: [
+                        sshPublisherDesc(
+                            configName: 'ansible-server',
+                            transfers: [
+                                sshTransfer(
+                                    sourceFiles: 'target/*.war',
+                                    removePrefix: 'target/',
+                                    remoteDirectory: '/opt/docker',
+                                    execCommand: '''
+                                    cd /opt/docker
+                                    ansible-playbook -i /opt/docker/hosts /opt/docker/create_image_regapp.yml
+                                    '''
+                                )
+                            ],
+                            verbose: true
+                        )
+                    ]
+                )
+            }
+        }
+    }
+
+    // Trigger the CD job only when every CI stage above succeeded
+    post {
+        success {
+            echo 'CI Successful → Triggering CD Job'
+            build job: 'Pipeline_RegApp_CD_Job', wait: false
+        }
+    }
+}

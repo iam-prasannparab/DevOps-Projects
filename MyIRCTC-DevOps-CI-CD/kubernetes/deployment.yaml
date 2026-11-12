@@ -1,0 +1,44 @@
+# TEMPLATE: Deployment for the MyIRCTC Tomcat container
+# Replace the image name with your Docker Hub repository.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myirctc
+  namespace: myirctc
+  labels:
+    app: myirctc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myirctc
+  template:
+    metadata:
+      labels:
+        app: myirctc
+    spec:
+      containers:
+        - name: myirctc
+          image: <dockerhub-username>/myirctc:latest   # replace
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20

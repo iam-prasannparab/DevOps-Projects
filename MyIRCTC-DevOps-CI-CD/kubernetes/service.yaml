@@ -1,0 +1,15 @@
+# TEMPLATE: Service of type LoadBalancer, exposing the Tomcat container on port 80
+# On AWS EKS, this creates a Classic or Network Load Balancer automatically.
+apiVersion: v1
+kind: Service
+metadata:
+  name: myirctc
+  namespace: myirctc
+spec:
+  type: LoadBalancer
+  selector:
+    app: myirctc
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
